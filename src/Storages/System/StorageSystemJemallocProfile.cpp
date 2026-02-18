@@ -3,7 +3,7 @@
 #include <QueryPipeline/Pipe.h>
 #include <Storages/System/StorageSystemJemallocProfile.h>
 
-#if 0
+#if USE_JEMALLOC
 #    include <ranges>
 #    include <unordered_map>
 #    include <unordered_set>
@@ -30,7 +30,7 @@
 namespace DB
 {
 
-#if 0
+#if USE_JEMALLOC
 namespace
 {
 
@@ -606,7 +606,7 @@ Pipe StorageSystemJemallocProfile::read(
     [[maybe_unused]] const size_t max_block_size,
     const size_t /*num_streams*/)
 {
-#if 0
+#if USE_JEMALLOC
     storage_snapshot->check(column_names);
 
     auto header = storage_snapshot->metadata->getSampleBlockWithVirtuals(getVirtualsList());
