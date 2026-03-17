@@ -17,3 +17,7 @@ target_link_libraries(serialization_variant_fuzzer PRIVATE clickhouse_aggregate_
 clickhouse_add_executable(serialization_dynamic_fuzzer serialization_dynamic_fuzzer.cpp ${SRCS})
 
 target_link_libraries(serialization_dynamic_fuzzer PRIVATE clickhouse_aggregate_functions dbms)
+
+clickhouse_add_executable(nested_type_serialization_fuzzer nested_type_serialization_fuzzer.cpp ${SRCS})
+
+target_link_libraries(nested_type_serialization_fuzzer PRIVATE clickhouse_aggregate_functions dbms)

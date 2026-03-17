@@ -13,6 +13,7 @@ namespace ErrorCodes
 {
     extern const int NOT_IMPLEMENTED;
     extern const int LOGICAL_ERROR;
+    extern const int INCORRECT_DATA;
 }
 
 struct SerializationVariantElement::DeserializeBinaryBulkStateVariantElement : public ISerialization::DeserializeBinaryBulkState
@@ -264,7 +265,7 @@ void SerializationVariantElement::deserializeBinaryBulkWithMultipleStreams(
     }
 
     if (variant_element_state->variant->size() < *variant_limit)
-        throw Exception(ErrorCodes::LOGICAL_ERROR, "Size of deserialized variant column less than the limit: {} < {}", variant_element_state->variant->size(), *variant_limit);
+        throw Exception(ErrorCodes::INCORRECT_DATA, "Size of deserialized variant column less than the limit: {} < {}", variant_element_state->variant->size(), *variant_limit);
 
     size_t variant_offset = variant_element_state->variant->size() - *variant_limit;
 

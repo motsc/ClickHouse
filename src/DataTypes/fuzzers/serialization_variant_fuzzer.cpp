@@ -10,6 +10,7 @@
 #include <DataTypes/DataTypeArray.h>
 #include <DataTypes/DataTypeTuple.h>
 #include <DataTypes/DataTypeDate.h>
+#include <DataTypes/DataTypeLowCardinality.h>
 
 #include <Columns/IColumn.h>
 
@@ -41,10 +42,13 @@ extern "C" int LLVMFuzzerInitialize(int *, char ***)
 ///   [2..9] rows: uint64_t LE, capped at 65536
 ///
 /// Variant types exercised:
-///   0: Variant(UInt64, String)                              — 2 variants, basic
-///   1: Variant(UInt64, String, Int32, Float64)              — 4 variants
+///   0: Variant(UInt64, String)                                          — 2 variants, basic
+///   1: Variant(UInt64, String, Int32, Float64)                          — 4 variants
 ///   2: Variant(UInt64, String, Int32, Float64, Date, Nullable(UInt32)) — 6 variants
-///   3: Variant(Array(UInt64), String, Tuple(UInt64, String)) — nested variants
+///   3: Variant(Array(UInt64), String, Tuple(UInt64, String))           — nested variants
+///   4: Variant(UInt8, String, Array(UInt32))                           — variant with array element
+///   5: Variant(LowCardinality(String), UInt64, Nullable(Float32))      — LC variant element
+///   6: Variant(String)                                                  — single-variant degenerate case
 ///
 /// The BASIC vs COMPACT discriminator serialization mode is encoded in the
 /// stream data itself (first byte of the VariantDiscriminators prefix), so
@@ -58,7 +62,7 @@ struct AuxiliaryRandomData
 
 static DataTypePtr makeVariantType(uint8_t selector)
 {
-    switch (selector % 4)
+    switch (selector % 7)
     {
         case 0:
             return std::make_shared<DataTypeVariant>(DataTypes{
@@ -82,7 +86,6 @@ static DataTypePtr makeVariantType(uint8_t selector)
                 std::make_shared<DataTypeNullable>(std::make_shared<DataTypeUInt32>()),
             });
         case 3:
-        default:
             return std::make_shared<DataTypeVariant>(DataTypes{
                 std::make_shared<DataTypeArray>(std::make_shared<DataTypeUInt64>()),
                 std::make_shared<DataTypeString>(),
@@ -90,6 +93,23 @@ static DataTypePtr makeVariantType(uint8_t selector)
                     std::make_shared<DataTypeUInt64>(),
                     std::make_shared<DataTypeString>(),
                 }),
+            });
+        case 4:
+            return std::make_shared<DataTypeVariant>(DataTypes{
+                std::make_shared<DataTypeUInt8>(),
+                std::make_shared<DataTypeString>(),
+                std::make_shared<DataTypeArray>(std::make_shared<DataTypeUInt32>()),
+            });
+        case 5:
+            return std::make_shared<DataTypeVariant>(DataTypes{
+                std::make_shared<DataTypeLowCardinality>(std::make_shared<DataTypeString>()),
+                std::make_shared<DataTypeUInt64>(),
+                std::make_shared<DataTypeNullable>(std::make_shared<DataTypeFloat32>()),
+            });
+        case 6:
+        default:
+            return std::make_shared<DataTypeVariant>(DataTypes{
+                std::make_shared<DataTypeString>(),
             });
     }
 }

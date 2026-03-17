@@ -27,3 +27,6 @@ target_link_libraries (fpc_decompress_fuzzer PRIVATE dbms)
 
 clickhouse_add_executable (multiple_decompress_fuzzer multiple_decompress_fuzzer.cpp)
 target_link_libraries (multiple_decompress_fuzzer PRIVATE dbms)
+
+clickhouse_add_executable (compression_chain_fuzzer compression_chain_fuzzer.cpp)
+target_link_libraries (compression_chain_fuzzer PRIVATE dbms)

@@ -640,7 +640,7 @@ void SerializationVariant::deserializeBinaryBulkWithMultipleStreams(
     {
         auto & variant_column = col.getVariantPtrByLocalDiscriminator(i);
         if (!variant_column)
-            throw Exception(ErrorCodes::LOGICAL_ERROR, "Column for variant {} is invalid", variant_names[i]);
+            throw Exception(ErrorCodes::INCORRECT_DATA, "Column for variant {} is invalid", variant_names[i]);
 
         addVariantElementToPath(settings.path, i);
         variant_serializations[i]->deserializeBinaryBulkWithMultipleStreams(
@@ -680,7 +680,7 @@ void SerializationVariant::deserializeBinaryBulkWithMultipleStreams(
             }
 
             if (col.getVariantByLocalDiscriminator(i).size() < variant_limits[i])
-                throw Exception(ErrorCodes::LOGICAL_ERROR, "Size of variant {} is expected to be not less than {} according to discriminators, but it is {}", variant_names[i], variant_limits[i], col.getVariantByLocalDiscriminator(i).size());
+                throw Exception(ErrorCodes::INCORRECT_DATA, "Size of variant {} is expected to be not less than {} according to discriminators, but it is {}", variant_names[i], variant_limits[i], col.getVariantByLocalDiscriminator(i).size());
 
             variant_offsets.push_back(col.getVariantByLocalDiscriminator(i).size() - variant_limits[i]);
         }
