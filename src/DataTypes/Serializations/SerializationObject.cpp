@@ -983,7 +983,7 @@ void SerializationObject::deserializeBinaryBulkWithMultipleStreams(
         settings.path.pop_back();
 
         if (!data_stream)
-            throw Exception(ErrorCodes::LOGICAL_ERROR, "Missing stream for Object data serialization in SerializationObject::deserializeBinaryBulkWithMultipleStreams");
+            throw Exception(ErrorCodes::INCORRECT_DATA, "Missing stream for Object data serialization in SerializationObject::deserializeBinaryBulkWithMultipleStreams");
 
         String data;
         FormatSettings format_settings = settings.format_settings ? *settings.format_settings : FormatSettings{};
@@ -1065,13 +1065,13 @@ void SerializationObject::deserializeBinaryBulkWithMultipleStreams(
     for (const auto & [path, path_column] : typed_paths)
     {
         if (path_column->size() != expected_size)
-            throw Exception(settings.native_format ? ErrorCodes::INCORRECT_DATA : ErrorCodes::LOGICAL_ERROR, "Unexpected size of typed path {}: {}. Expected size {}", path, path_column->size(), expected_size);
+            throw Exception(ErrorCodes::INCORRECT_DATA, "Unexpected size of typed path {}: {}. Expected size {}", path, path_column->size(), expected_size);
     }
 
     for (const auto & [path, path_column] : dynamic_paths)
     {
         if (path_column->size() != expected_size)
-            throw Exception(settings.native_format ? ErrorCodes::INCORRECT_DATA : ErrorCodes::LOGICAL_ERROR, "Unexpected size of dynamic path {}: {}. Expected size {}", path, path_column->size(), expected_size);
+            throw Exception(ErrorCodes::INCORRECT_DATA, "Unexpected size of dynamic path {}: {}. Expected size {}", path, path_column->size(), expected_size);
     }
 
     column_object.repairDuplicatesInDynamicPathsAndSharedData(shared_data_previous_size);

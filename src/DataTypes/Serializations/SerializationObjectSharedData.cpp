@@ -649,13 +649,13 @@ std::shared_ptr<SerializationObjectSharedData::StructureGranules> SerializationO
         settings.path.push_back(Substream::ObjectSharedDataStructurePrefix);
         auto * structure_prefix_stream = settings.getter(settings.path);
         if (!structure_prefix_stream)
-            throw Exception(ErrorCodes::LOGICAL_ERROR, "Got empty structure prefix stream for object shared data data");
+            throw Exception(ErrorCodes::INCORRECT_DATA, "Got empty structure prefix stream for object shared data data");
 
         deserializeStructureGranulePrefix(*structure_prefix_stream, structure_granule, structure_state);
         settings.path.pop_back();
 
         if (structure_granule.num_rows != rows_offset + limit)
-            throw Exception(ErrorCodes::LOGICAL_ERROR, "Expected reading a single granule with {} rows, requested {} rows in Compact part", structure_granule.num_rows, rows_offset + limit);
+            throw Exception(ErrorCodes::INCORRECT_DATA, "Expected reading a single granule with {} rows, requested {} rows in Compact part", structure_granule.num_rows, rows_offset + limit);
 
         structure_granule.offset = rows_offset;
         structure_granule.limit = limit;
@@ -664,7 +664,7 @@ std::shared_ptr<SerializationObjectSharedData::StructureGranules> SerializationO
         settings.path.push_back(Substream::ObjectSharedDataStructureSuffix);
         auto * structure_suffix_stream = settings.getter(settings.path);
         if (!structure_suffix_stream)
-            throw Exception(ErrorCodes::LOGICAL_ERROR, "Got empty structure suffix stream for object shared data");
+            throw Exception(ErrorCodes::INCORRECT_DATA, "Got empty structure suffix stream for object shared data");
 
         deserializeStructureGranuleSuffix(*structure_suffix_stream, structure_granule);
         settings.path.pop_back();
@@ -677,7 +677,7 @@ std::shared_ptr<SerializationObjectSharedData::StructureGranules> SerializationO
         auto * structure_stream = settings.getter(structure_path);
 
         if (!structure_stream)
-            throw Exception(ErrorCodes::LOGICAL_ERROR, "Got empty structure stream for object shared data");
+            throw Exception(ErrorCodes::INCORRECT_DATA, "Got empty structure stream for object shared data");
 
         /// Reset last read granule state if we don't continue reading from it.
         if (!settings.continuous_reading)
@@ -790,7 +790,7 @@ std::shared_ptr<SerializationObjectSharedData::PathsInfosGranules> Serialization
             auto * paths_marks_stream = settings.getter(settings.path);
 
             if (!paths_marks_stream)
-                throw Exception(ErrorCodes::LOGICAL_ERROR, "Got empty stream for shared data paths marks");
+                throw Exception(ErrorCodes::INCORRECT_DATA, "Got empty stream for shared data paths marks");
 
             /// We don't read data from marks stream continuously, so we need to seek to the start of this granule.
             settings.seek_stream_to_mark_callback(settings.path, structure_granule.paths_marks_stream_mark);
@@ -821,7 +821,7 @@ std::shared_ptr<SerializationObjectSharedData::PathsInfosGranules> Serialization
             auto * paths_substreams_metadata_stream = settings.getter(settings.path);
 
             if (!paths_substreams_metadata_stream)
-                throw Exception(ErrorCodes::LOGICAL_ERROR, "Got empty stream for shared data paths substreams metadata");
+                throw Exception(ErrorCodes::INCORRECT_DATA, "Got empty stream for shared data paths substreams metadata");
 
             /// We don't read data from marks stream continuously, so we need to seek to the start of this granule.
             settings.seek_stream_to_mark_callback(settings.path, structure_granule.paths_substreams_metadata_stream_mark);
@@ -850,7 +850,7 @@ std::shared_ptr<SerializationObjectSharedData::PathsInfosGranules> Serialization
             auto * paths_substreams_stream = settings.getter(settings.path);
 
             if (!paths_substreams_stream)
-                throw Exception(ErrorCodes::LOGICAL_ERROR, "Got empty stream for shared data paths substreams");
+                throw Exception(ErrorCodes::INCORRECT_DATA, "Got empty stream for shared data paths substreams");
 
             for (const auto & [_, requested_path] : structure_granule.position_to_requested_path)
             {
@@ -877,7 +877,7 @@ std::shared_ptr<SerializationObjectSharedData::PathsInfosGranules> Serialization
             auto * paths_substreams_marks_stream = settings.getter(settings.path);
 
             if (!paths_substreams_marks_stream)
-                throw Exception(ErrorCodes::LOGICAL_ERROR, "Got empty stream for shared data paths substreams marks");
+                throw Exception(ErrorCodes::INCORRECT_DATA, "Got empty stream for shared data paths substreams marks");
 
             for (const auto & [_, requested_path] : structure_granule.position_to_requested_path)
             {
@@ -924,7 +924,7 @@ std::shared_ptr<SerializationObjectSharedData::PathsDataGranules> SerializationO
     /// Deserialize paths data granule by granule.
     auto * data_stream = settings.getter(settings.path);
     if (!data_stream)
-        throw Exception(ErrorCodes::LOGICAL_ERROR, "Got empty stream for shared data data");
+        throw Exception(ErrorCodes::INCORRECT_DATA, "Got empty stream for shared data data");
 
     auto paths_data_granules = std::make_shared<PathsDataGranules>();
     paths_data_granules->reserve(structure_granules.size());
@@ -959,7 +959,7 @@ std::shared_ptr<SerializationObjectSharedData::PathsDataGranules> SerializationO
         {
             auto path_info_it = path_to_info.find(requested_path);
             if (path_info_it == path_to_info.end())
-                throw Exception(ErrorCodes::LOGICAL_ERROR, "Info for path {} is not deserialized", requested_path);
+                throw Exception(ErrorCodes::INCORRECT_DATA, "Info for path {} is not deserialized", requested_path);
 
             const auto & path_info = path_info_it->second;
             /// Reset callbacks that might be different for different paths.
@@ -982,7 +982,7 @@ std::shared_ptr<SerializationObjectSharedData::PathsDataGranules> SerializationO
 
                     auto it = path_info.substream_to_mark.find(stream_name);
                     if (it == path_info.substream_to_mark.end())
-                        throw Exception(ErrorCodes::LOGICAL_ERROR, "Substream {} for path {} is requested but not found in substreams list", stream_name, requested_path);
+                        throw Exception(ErrorCodes::INCORRECT_DATA, "Substream {} for path {} is requested but not found in substreams list", stream_name, requested_path);
 
                     /// Seek to the requested substream in the data stream.
                     settings.seek_stream_to_mark_callback(settings.path, it->second);
@@ -1129,7 +1129,7 @@ void SerializationObjectSharedData::deserializeBinaryBulkWithMultipleStreams(
                 deserializeStructureGranulePrefix(*structure_prefix_stream, structure_granule, *structure_state);
 
                 if (structure_granule.num_rows != rows_offset + limit)
-                    throw Exception(ErrorCodes::LOGICAL_ERROR, "Expected reading a single granule with {} rows, requested {} rows in Compact part in bucket {}", structure_granule.num_rows, rows_offset + limit, bucket);
+                    throw Exception(ErrorCodes::INCORRECT_DATA, "Expected reading a single granule with {} rows, requested {} rows in Compact part in bucket {}", structure_granule.num_rows, rows_offset + limit, bucket);
 
                 paths.insert(paths.end(), structure_granule.all_paths.begin(), structure_granule.all_paths.end());
                 settings.path.pop_back();
@@ -1147,7 +1147,7 @@ void SerializationObjectSharedData::deserializeBinaryBulkWithMultipleStreams(
                 settings.path.pop_back();
 
                 if (!data_stream)
-                    throw Exception(ErrorCodes::LOGICAL_ERROR, "Got empty stream for object shared data data");
+                    throw Exception(ErrorCodes::INCORRECT_DATA, "Got empty stream for object shared data data");
 
                 DeserializeBinaryBulkSettings deserialization_settings;
                 deserialization_settings.object_and_dynamic_read_statistics = false;
@@ -1168,7 +1168,7 @@ void SerializationObjectSharedData::deserializeBinaryBulkWithMultipleStreams(
                 settings.path.pop_back();
 
                 if (!paths_marks_stream)
-                    throw Exception(ErrorCodes::LOGICAL_ERROR, "Got empty stream for object shared data paths marks");
+                    throw Exception(ErrorCodes::INCORRECT_DATA, "Got empty stream for object shared data paths marks");
 
                 paths_marks_stream->ignore(sizeof(UInt64) * structure_granule.num_paths * 2);
 
@@ -1177,7 +1177,7 @@ void SerializationObjectSharedData::deserializeBinaryBulkWithMultipleStreams(
                 settings.path.pop_back();
 
                 if (!paths_substreams_stream)
-                    throw Exception(ErrorCodes::LOGICAL_ERROR, "Got empty stream for object shared data paths substreams");
+                    throw Exception(ErrorCodes::INCORRECT_DATA, "Got empty stream for object shared data paths substreams");
 
                 size_t num_substreams;
                 size_t total_number_of_substreams = 0;
@@ -1194,7 +1194,7 @@ void SerializationObjectSharedData::deserializeBinaryBulkWithMultipleStreams(
                 settings.path.pop_back();
 
                 if (!substreams_marks_stream)
-                    throw Exception(ErrorCodes::LOGICAL_ERROR, "Got empty stream for object shared data paths substreams marks");
+                    throw Exception(ErrorCodes::INCORRECT_DATA, "Got empty stream for object shared data paths substreams marks");
 
                 substreams_marks_stream->ignore(sizeof(UInt64) * total_number_of_substreams * 2);
 
@@ -1203,7 +1203,7 @@ void SerializationObjectSharedData::deserializeBinaryBulkWithMultipleStreams(
                 settings.path.pop_back();
 
                 if (!paths_substreams_metadata_stream)
-                    throw Exception(ErrorCodes::LOGICAL_ERROR, "Got empty stream for object shared data paths substreams marks");
+                    throw Exception(ErrorCodes::INCORRECT_DATA, "Got empty stream for object shared data paths substreams marks");
 
                 paths_substreams_metadata_stream->ignore(sizeof(UInt64) * structure_granule.num_paths * 4);
 
@@ -1212,7 +1212,7 @@ void SerializationObjectSharedData::deserializeBinaryBulkWithMultipleStreams(
                 settings.path.pop_back();
 
                 if (!structure_suffix_stream)
-                    throw Exception(ErrorCodes::LOGICAL_ERROR, "Got empty stream for object shared data structure suffix");
+                    throw Exception(ErrorCodes::INCORRECT_DATA, "Got empty stream for object shared data structure suffix");
 
                 deserializeStructureGranuleSuffix(*structure_suffix_stream, structure_granule);
 
@@ -1240,7 +1240,7 @@ void SerializationObjectSharedData::deserializeBinaryBulkWithMultipleStreams(
             settings.path.push_back(Substream::ObjectSharedDataCopyPathsIndexes);
             auto * indexes_stream = settings.getter(settings.path);
             if (!indexes_stream)
-                throw Exception(ErrorCodes::LOGICAL_ERROR, "Got empty stream for shared data copy indexes");
+                throw Exception(ErrorCodes::INCORRECT_DATA, "Got empty stream for shared data copy indexes");
 
             deserializeIndexesAndCollectPaths(paths_column, *indexes_stream, std::move(paths), skipped_nested_rows, nested_limit);
             settings.path.pop_back();
@@ -1249,7 +1249,7 @@ void SerializationObjectSharedData::deserializeBinaryBulkWithMultipleStreams(
             settings.path.push_back(Substream::ObjectSharedDataCopyValues);
             auto * values_stream = settings.getter(settings.path);
             if (!values_stream)
-                throw Exception(ErrorCodes::LOGICAL_ERROR, "Got empty stream for shared data copy values");
+                throw Exception(ErrorCodes::INCORRECT_DATA, "Got empty stream for shared data copy values");
 
             SerializationString().deserializeBinaryBulk(values_column, *values_stream, skipped_nested_rows, nested_limit, 0);
             settings.path.pop_back();
@@ -1326,7 +1326,7 @@ void SerializationObjectSharedData::deserializeBinaryBulkWithMultipleStreams(
             /// Read array sizes.
             settings.path.push_back(Substream::ObjectSharedDataCopySizes);
             if (!SerializationArray::deserializeOffsetsBinaryBulk(offsets_column, rows_offset + limit, settings, cache))
-                throw Exception(ErrorCodes::LOGICAL_ERROR, "Got empty stream for object shared data copy sizes");
+                throw Exception(ErrorCodes::INCORRECT_DATA, "Got empty stream for object shared data copy sizes");
 
             settings.path.pop_back();
 
@@ -1335,7 +1335,7 @@ void SerializationObjectSharedData::deserializeBinaryBulkWithMultipleStreams(
             auto * indexes_stream = settings.getter(settings.path);
 
             if (!indexes_stream)
-                throw Exception(ErrorCodes::LOGICAL_ERROR, "Got empty stream for object shared data copy indexes");
+                throw Exception(ErrorCodes::INCORRECT_DATA, "Got empty stream for object shared data copy indexes");
 
             /// Each granule has its own set of indexes, we should deserialize them granule by granule.
             size_t offsets_current_granule_start = prev_offset_size;

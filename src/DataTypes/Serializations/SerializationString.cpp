@@ -25,7 +25,6 @@ namespace DB
 namespace ErrorCodes
 {
     extern const int INCORRECT_DATA;
-    extern const int LOGICAL_ERROR;
     extern const int TOO_LARGE_STRING_SIZE;
 }
 
@@ -810,7 +809,7 @@ void SerializationString::deserializeBinaryBulkWithSizeStream(
     settings.path.back() = Substream::Regular;
     auto * stream = settings.getter(settings.path);
     if (!stream)
-        throw Exception(ErrorCodes::LOGICAL_ERROR, "Got empty stream for String data.");
+        throw Exception(ErrorCodes::INCORRECT_DATA, "Got empty stream for String data.");
 
     /// Fill offsets and calculate bytes to skip and read based on sizes column.
     auto mutable_column = column->assumeMutable();
