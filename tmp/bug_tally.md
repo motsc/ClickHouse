@@ -173,16 +173,16 @@ condition reachable from malformed binary input must use `INCORRECT_DATA`.
 
 ---
 
-## PR Grouping Recommendation
+## PR Branches (all local, not yet pushed)
 
-| PR | Title | Bugs | Commits |
-|----|-------|------|---------|
-| PR-A | fix: heap-buffer-overflow and abort in T64/Multiple decompression codecs | 1a, 1b, 1c, 1d | `3b97943749e` |
-| PR-B | fix: FPC codec OOM from attacker-controlled compression level | 2 | `c84f1b32bf3` (partial) |
-| PR-C | fix: SerializationVariant OOB via unchecked discriminator values | 3a, 3b, 3c | `c84f1b32bf3` (partial), `0d42eb9c2dc`, `69f92f1b5bb` (partial) |
-| PR-D | fix: LOGICAL_ERROR → INCORRECT_DATA in deserialization paths (NativeReader, Nullable, Tuple, Array, Sparse, LowCardinality, Sparse, ColumnUnique, ColumnVariant, Variant, Object, String, Replicated) | 4, 7 | `c84f1b32bf3` (partial), `69f92f1b5bb` (partial), `9972977047e`, `c4b9faa3a22`, `0858fc45b23` |
-| PR-E | fix: heap-buffer-overflow and OOM in SerializationLowCardinality additional keys | 5a, 5b | `95019c9c005`, `bef7b3d18ad`, `f18e5e12f39` |
-| PR-F | fix: BlockInfo out_of_order_buckets deserialization OOM | 6 | `6eb2eee2f84` |
+| PR | Branch | Files changed | Bugs | PR link |
+|----|--------|--------------|------|---------|
+| PR-A | `fix/t64-multiple-decompress-oob` | `CompressionCodecT64.cpp`, `CompressionCodecMultiple.cpp` | 1a, 1b, 1c, 1d | TBD |
+| PR-B | `fix/fpc-predictor-oom` | `CompressionCodecFPC.cpp` | 2 | TBD |
+| PR-C | `fix/serialization-variant-discriminator-oob` | `SerializationVariant.cpp`, `SerializationVariantElement.cpp`, `ColumnVariant.cpp` | 3a, 3b, 3c | TBD |
+| PR-D | `fix/deserialization-logical-error-abort` | `NativeReader.cpp`, `SerializationNullable.cpp`, `SerializationTuple.cpp`, `SerializationArray.cpp`, `SerializationSparse.cpp`, `SerializationString.cpp`, `SerializationObject.cpp`, `SerializationObjectSharedData.cpp`, `SerializationReplicated.cpp`, `ColumnUnique.h`, `Allocator.cpp` | 4, 7 | TBD |
+| PR-E | `fix/lc-additional-keys-oob-oom` | `SerializationLowCardinality.cpp` | 5a, 5b | TBD |
+| PR-F | `fix/blockinfo-buckets-oom` | `BlockInfo.cpp` | 6 | TBD |
 
 ---
 
