@@ -51,7 +51,31 @@ underflows (unsigned arithmetic). Fix: compare `actual_rows_read < limit_in_gran
 `LowCardinality(String)` input produces an attacker-controlled string length.
 Changed to `CANNOT_ALLOCATE_MEMORY`.
 
+## patch_dbms.sh must be updated for every new source fix
+When fixing a serialization bug, ALWAYS add the `.cpp` file to both the `recompile` list AND the
+`llvm-ar-21` command in `tmp/patch_dbms.sh`. Omitting a file means the fix exists in source
+but the binary in `/build/libdbms.a` uses the old object file. `SerializationSparse.cpp` was
+missed in the initial script and triggered a second crash.
+
+## LowCardinality overflow_map OOM
+`mapIndexWithAdditionalKeys` allocates `PaddedPODArray<T> overflow_map(overflow_map_size)` where
+`overflow_map_size = max_value - dict_size + 1` and `max_value` comes from deserialized data.
+With a single large index value (e.g. `dict_size + 2^63`), allocation is `2^63 * sizeof(T)`.
+Fix: cap at `MAX_OVERFLOW_MAP_SIZE = 1 << 20` and throw `INCORRECT_DATA`.
+
+## BlockInfo out_of_order_buckets OOM
+Field 3 in `BlockInfo::read` was deserialized via generic `readBinary<vector<Int32>>` which
+allows up to 268M entries (DEFAULT_MAX_STRING_SIZE / 4). `std::vector::resize` bypasses
+`MemoryTracker`. Fix: expand field 3 out of the `APPLY_FOR_BLOCK_INFO_FIELDS` macro with
+explicit `readVarUInt` + 65536 cap.
+
+## SerializationReplicated LOGICAL_ERROR paths
+`deserializeBinaryBulkWithMultipleStreams` had 3 data-dependent `LOGICAL_ERROR` throws:
+`num_rows != limit`, invalid `size_of_indexes_type`, and missing elements stream.
+All changed to `INCORRECT_DATA`.
+
 ## Fuzzer exec rates (30s smoke tests, ASan build, ARM64)
 - `compression_chain_fuzzer`: ~4,456 exec/s (stable)
-- `nested_type_serialization_fuzzer`: ~2,054 exec/s (stable after Allocator fix)
-- `serialization_variant_fuzzer`: ~2,970 exec/s (stable after multiple fixes)
+- `nested_type_serialization_fuzzer`: ~1,576 exec/s (stable)
+- `serialization_variant_fuzzer`: ~470 exec/s (stable)
+- `native_reader_fuzzer`: ~1,314 exec/s (stable after all LOGICAL_ERROR fixes)
