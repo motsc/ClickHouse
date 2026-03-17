@@ -346,6 +346,14 @@ namespace
 
         auto map_size = UInt64(max_less_dict_size) + 1;
         auto overflow_map_size = max_value >= dict_size ? (UInt64(max_value - dict_size) + 1) : 0;
+        /// The overflow_map is a direct-addressed lookup table indexed by shifted additional key positions.
+        /// With a malformed index column, max_value can be attacker-controlled, making overflow_map_size
+        /// arbitrarily large. Cap it to prevent enormous allocations.
+        static constexpr UInt64 MAX_OVERFLOW_MAP_SIZE = 1ULL << 20; /// 1M entries
+        if (overflow_map_size > MAX_OVERFLOW_MAP_SIZE)
+            throw Exception(ErrorCodes::INCORRECT_DATA,
+                "LowCardinality index span {} for additional keys exceeds limit {}",
+                overflow_map_size, MAX_OVERFLOW_MAP_SIZE);
         PaddedPODArray<T> map(map_size, 0);
         PaddedPODArray<T> overflow_map(overflow_map_size, 0);
 
