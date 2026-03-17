@@ -319,8 +319,9 @@ namespace
     {
         MutableColumnPtr dictionary_map;
         MutableColumnPtr additional_keys_map;
-        /// Number of distinct additional keys referenced by indexes_column.
-        /// Must be <= additional_keys->size() before calling additional_keys->index().
+        /// Range of additional key positions referenced by additional_keys_map values.
+        /// Values in additional_keys_map are original shifted index positions (0..N-1),
+        /// so additional_keys must have at least this many entries.
         UInt64 required_additional_keys = 0;
     };
 
@@ -412,7 +413,9 @@ namespace
                 val = overflow_map[val - dict_size] + static_cast<T>(cur_pos);
         }
 
-        return {std::move(dictionary_map), std::move(additional_keys_map), cur_overflowed_pos};
+        /// additional_keys_map values are original shifted index positions (0..overflow_map_size-1),
+        /// so additional_keys must have at least overflow_map_size entries.
+        return {std::move(dictionary_map), std::move(additional_keys_map), overflow_map_size};
     }
 
     /// Update column and return map with old indexes.
