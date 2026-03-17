@@ -757,6 +757,10 @@ std::pair<std::vector<size_t>, std::vector<size_t>> SerializationVariant::deseri
         size_t limit_in_granule = std::min(limit, state.remaining_rows_in_granule);
         if (state.granule_format == CompactDiscriminatorsGranuleFormat::COMPACT)
         {
+            if (state.compact_discr != ColumnVariant::NULL_DISCRIMINATOR && state.compact_discr >= variant_serializations.size())
+                throw Exception(ErrorCodes::INCORRECT_DATA,
+                    "Invalid variant discriminator {}, expected < {}", UInt32(state.compact_discr), variant_serializations.size());
+
             auto & data = discriminators.getData();
             data.resize_fill(data.size() + limit_in_granule, state.compact_discr);
             auto remained_limit_in_granule = limit_in_granule;
@@ -826,12 +830,7 @@ void SerializationVariant::readDiscriminatorsGranuleStart(DeserializeBinaryBulkS
 
     state.granule_format = static_cast<CompactDiscriminatorsGranuleFormat>(granule_format);
     if (granule_format == CompactDiscriminatorsGranuleFormat::COMPACT)
-    {
         readBinaryLittleEndian(state.compact_discr, *stream);
-        if (state.compact_discr != ColumnVariant::NULL_DISCRIMINATOR && state.compact_discr >= variant_serializations.size())
-            throw Exception(ErrorCodes::INCORRECT_DATA,
-                "Invalid variant discriminator {}, expected < {}", UInt32(state.compact_discr), variant_serializations.size());
-    }
 }
 
 void SerializationVariant::addVariantElementToPath(DB::ISerialization::SubstreamPath & path, size_t i) const
