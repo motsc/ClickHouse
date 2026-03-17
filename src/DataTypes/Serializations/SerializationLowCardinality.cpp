@@ -319,6 +319,9 @@ namespace
     {
         MutableColumnPtr dictionary_map;
         MutableColumnPtr additional_keys_map;
+        /// Number of distinct additional keys referenced by indexes_column.
+        /// Must be <= additional_keys->size() before calling additional_keys->index().
+        UInt64 required_additional_keys = 0;
     };
 
     template <typename T>
@@ -409,7 +412,7 @@ namespace
                 val = overflow_map[val - dict_size] + static_cast<T>(cur_pos);
         }
 
-        return {std::move(dictionary_map), std::move(additional_keys_map)};
+        return {std::move(dictionary_map), std::move(additional_keys_map), cur_overflowed_pos};
     }
 
     /// Update column and return map with old indexes.
@@ -635,6 +638,11 @@ void SerializationLowCardinality::deserializeBinaryBulkWithMultipleStreams(
             {
                 if (additional_keys == nullptr)
                     throw Exception(ErrorCodes::INCORRECT_DATA, "No additional keys found.");
+
+                if (maps.required_additional_keys > additional_keys->size())
+                    throw Exception(ErrorCodes::INCORRECT_DATA,
+                        "LowCardinality index references {} additional keys but only {} were deserialized",
+                        maps.required_additional_keys, additional_keys->size());
 
                 auto used_add_keys = additional_keys->index(*maps.additional_keys_map, 0);
 
