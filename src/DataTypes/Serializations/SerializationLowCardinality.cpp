@@ -430,7 +430,7 @@ namespace
             return mapIndexWithAdditionalKeys(*data_uint32, dict_size);
         if (auto * data_uint64 = getIndexesData<UInt64>(column))
             return mapIndexWithAdditionalKeys(*data_uint64, dict_size);
-        throw Exception(ErrorCodes::LOGICAL_ERROR, "Indexes column for mapIndexWithAdditionalKeys must be UInt, got {}", column.getName());
+        throw Exception(ErrorCodes::INCORRECT_DATA, "Indexes column for mapIndexWithAdditionalKeys must be UInt, got {}", column.getName());
     }
 }
 

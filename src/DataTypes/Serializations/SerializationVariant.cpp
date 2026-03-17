@@ -597,7 +597,12 @@ void SerializationVariant::deserializeBinaryBulkWithMultipleStreams(
             {
                 ColumnVariant::Discriminator discr = discriminators_data[i];
                 if (discr != ColumnVariant::NULL_DISCRIMINATOR)
+                {
+                    if (discr >= variant_serializations.size())
+                        throw Exception(ErrorCodes::INCORRECT_DATA,
+                            "Invalid variant discriminator {}, expected < {}", UInt32(discr), variant_serializations.size());
                     ++variant_rows_offsets[discr];
+                }
             }
         }
     }
@@ -620,7 +625,12 @@ void SerializationVariant::deserializeBinaryBulkWithMultipleStreams(
         {
             ColumnVariant::Discriminator discr = discriminators_data[i];
             if (discr != ColumnVariant::NULL_DISCRIMINATOR)
+            {
+                if (discr >= variant_serializations.size())
+                    throw Exception(ErrorCodes::INCORRECT_DATA,
+                        "Invalid variant discriminator {}, expected < {}", UInt32(discr), variant_serializations.size());
                 ++variant_limits[discr];
+            }
         }
     }
 
@@ -774,14 +784,24 @@ std::pair<std::vector<size_t>, std::vector<size_t>> SerializationVariant::deseri
             {
                 ColumnVariant::Discriminator discr = discriminators_data[i];
                 if (discr != ColumnVariant::NULL_DISCRIMINATOR)
+                {
+                    if (discr >= variant_serializations.size())
+                        throw Exception(ErrorCodes::INCORRECT_DATA,
+                            "Invalid variant discriminator {}, expected < {}", UInt32(discr), variant_serializations.size());
                     ++variant_rows_offsets[discr];
+                }
             }
 
             for (size_t i = start + skipped_rows; i != discriminators_data.size(); ++i)
             {
                 ColumnVariant::Discriminator discr = discriminators_data[i];
                 if (discr != ColumnVariant::NULL_DISCRIMINATOR)
+                {
+                    if (discr >= variant_serializations.size())
+                        throw Exception(ErrorCodes::INCORRECT_DATA,
+                            "Invalid variant discriminator {}, expected < {}", UInt32(discr), variant_serializations.size());
                     ++variant_limits[discr];
+                }
             }
 
             rows_offset -= skipped_rows;
@@ -806,7 +826,12 @@ void SerializationVariant::readDiscriminatorsGranuleStart(DeserializeBinaryBulkS
 
     state.granule_format = static_cast<CompactDiscriminatorsGranuleFormat>(granule_format);
     if (granule_format == CompactDiscriminatorsGranuleFormat::COMPACT)
+    {
         readBinaryLittleEndian(state.compact_discr, *stream);
+        if (state.compact_discr != ColumnVariant::NULL_DISCRIMINATOR && state.compact_discr >= variant_serializations.size())
+            throw Exception(ErrorCodes::INCORRECT_DATA,
+                "Invalid variant discriminator {}, expected < {}", UInt32(state.compact_discr), variant_serializations.size());
+    }
 }
 
 void SerializationVariant::addVariantElementToPath(DB::ISerialization::SubstreamPath & path, size_t i) const

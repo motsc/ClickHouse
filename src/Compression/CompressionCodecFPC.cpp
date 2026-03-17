@@ -495,6 +495,14 @@ UInt32 CompressionCodecFPC::doDecompressData(const char * source, UInt32 source_
     if (compressed_level == 0 || compressed_level > MAX_COMPRESSION_LEVEL)
         throw Exception(ErrorCodes::CANNOT_DECOMPRESS, "Cannot decompress FPC-encoded data. File has incorrect level");
 
+    /// Two predictor tables of (1 << level) entries each. Cap memory to prevent OOM from attacker-controlled level.
+    static constexpr size_t MAX_FPC_PREDICTOR_MEMORY = 256ULL * 1024 * 1024;
+    size_t predictor_memory = 2 * (1ULL << compressed_level) * sizeof(UInt64);
+    if (predictor_memory > MAX_FPC_PREDICTOR_MEMORY)
+        throw Exception(ErrorCodes::CANNOT_DECOMPRESS,
+            "FPC compression level {} requires {} bytes for predictor tables, limit is {}",
+            UInt32(compressed_level), predictor_memory, MAX_FPC_PREDICTOR_MEMORY);
+
     auto destination = std::as_writable_bytes(std::span(dest, uncompressed_size));
     auto src = compressed_data.subspan(HEADER_SIZE);
     switch (compressed_float_width)

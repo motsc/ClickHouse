@@ -32,6 +32,7 @@ namespace ErrorCodes
     extern const int LOGICAL_ERROR;
     extern const int ILLEGAL_COLUMN;
     extern const int NOT_IMPLEMENTED;
+    extern const int INCORRECT_DATA;
 }
 
 /** Stores another column with unique values
@@ -353,7 +354,7 @@ template <typename ColumnType>
 size_t ColumnUnique<ColumnType>::getNullValueIndex() const
 {
     if (!is_nullable)
-        throw Exception(ErrorCodes::LOGICAL_ERROR, "ColumnUnique can't contain null values.");
+        throw Exception(ErrorCodes::INCORRECT_DATA, "ColumnUnique can't contain null values.");
 
     return 0;
 }
@@ -637,7 +638,7 @@ static void checkIndexes(const ColumnVector<IndexType> & indexes, size_t max_dic
     {
         if (data[i] >= max_dictionary_size)
         {
-            throw Exception(ErrorCodes::LOGICAL_ERROR, "Found index {} at position {} which is grated or equal "
+            throw Exception(ErrorCodes::INCORRECT_DATA, "Found index {} at position {} which is grated or equal "
                             "than dictionary size {}", toString(data[i]), toString(i), toString(max_dictionary_size));
         }
     }
