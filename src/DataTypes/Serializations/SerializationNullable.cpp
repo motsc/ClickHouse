@@ -160,7 +160,7 @@ void SerializationNullable::deserializeBinaryBulkWithMultipleStreams(
     auto nested_column = col.getNestedColumnPtr();
     if (null_map->size() != nested_column->size())
         throw Exception(
-            settings.native_format ? ErrorCodes::INCORRECT_DATA : ErrorCodes::LOGICAL_ERROR,
+            ErrorCodes::INCORRECT_DATA,
             "Sizes of nested column and null map of Nullable column are not equal after deserialization (null map size = {}, nested "
             "column size = {})",
             null_map->size(),

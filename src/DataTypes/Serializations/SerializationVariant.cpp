@@ -650,7 +650,7 @@ void SerializationVariant::deserializeBinaryBulkWithMultipleStreams(
 
         /// Verify that we deserialized data of this variant.
         if (variant_limits[i] && col.getVariantPtrByLocalDiscriminator(i)->empty())
-            throw Exception(settings.native_format ? ErrorCodes::INCORRECT_DATA : ErrorCodes::LOGICAL_ERROR, "Variant {} is empty, but expected to be read {} values", variant_names[i], variant_limits[i]);
+            throw Exception(ErrorCodes::INCORRECT_DATA, "Variant {} is empty, but expected to be read {} values", variant_names[i], variant_limits[i]);
     }
     settings.path.pop_back();
 
@@ -712,7 +712,12 @@ void SerializationVariant::deserializeBinaryBulkWithMultipleStreams(
                 if (discr == ColumnVariant::NULL_DISCRIMINATOR)
                     offsets.emplace_back();
                 else
+                {
+                    if (discr >= variant_serializations.size())
+                        throw Exception(ErrorCodes::INCORRECT_DATA,
+                            "Invalid variant discriminator {} in offset fill, expected < {}", UInt32(discr), variant_serializations.size());
                     offsets.push_back(variant_offsets[discr]++);
+                }
             }
         }
 
@@ -780,7 +785,12 @@ std::pair<std::vector<size_t>, std::vector<size_t>> SerializationVariant::deseri
         }
         else
         {
+            size_t discriminators_before = discriminators_data.size();
             SerializationNumber<ColumnVariant::Discriminator>().deserializeBinaryBulk(discriminators, *stream, 0, limit_in_granule, 0);
+            size_t actual_rows_read = discriminators_data.size() - discriminators_before;
+            if (actual_rows_read < limit_in_granule)
+                throw Exception(ErrorCodes::INCORRECT_DATA,
+                    "Unable to read {} discriminator rows, only {} bytes available in stream", limit_in_granule, actual_rows_read);
             size_t start = discriminators_data.size() - limit_in_granule;
             size_t skipped_rows = std::min(rows_offset, limit_in_granule);
 
